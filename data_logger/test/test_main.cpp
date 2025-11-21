@@ -17,6 +17,38 @@ void test_sd_card_available() {
     TEST_ASSERT_TRUE_MESSAGE(dataFile, "SD card not available");
 }
 
+void test_data_logging() {
+    // Clear the file first (optional)
+    String testFile = "testFile.txt";
+    File clearFile = SD.open(testFile, FILE_WRITE);
+    if (clearFile) clearFile.close();
+
+    // Prepare test data
+    std::vector<String> testRow = {"Test1", "Test2", "Test3"};
+    log_data(testRow, testFile);
+
+    // Read back file
+    File dataFile = SD.open(testFile, FILE_READ);
+    TEST_ASSERT_TRUE_MESSAGE(dataFile, "Failed to open datalog.txt for reading");
+
+    String fileContent;
+    while (dataFile.available()) {
+        fileContent += (char)dataFile.read();
+    }
+    dataFile.close();
+
+   // Split fileContent into lines
+    int lastNewline = fileContent.lastIndexOf('\n');
+    String lastLine = fileContent.substring(fileContent.lastIndexOf('\n', lastNewline - 1) + 1, lastNewline);
+
+    String expectedLine = "Test1,Test2,Test3";
+    TEST_ASSERT_EQUAL_STRING_MESSAGE(expectedLine.c_str(), lastLine.c_str(), "CSV last line does not match expected output");
+
+    // Delete the test line/file
+    bool deleted = SD.remove(testFile);
+    TEST_ASSERT_TRUE_MESSAGE(deleted, "Failed to delete log file after test");
+}
+
 void test_SHT45_sensor()
 {
   Adafruit_SHT4x sht4 = SHT45_init();
@@ -67,7 +99,7 @@ void run_all_tests() {
     RUN_TEST(test_led_builtin_pin_number);
     RUN_TEST(test_sd_card_available);
     RUN_TEST(test_SHT45_sensor);
-    // RUN_TEST(test_data_logging);
+    RUN_TEST(test_data_logging);
     UNITY_END();
 }
 
