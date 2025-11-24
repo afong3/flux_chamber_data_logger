@@ -80,16 +80,62 @@ void test_low_power_mode(void)
   TEST_ASSERT_TRUE(true);
 }
 
-void test_RTC_synchronization(void)
-{
-  // Placeholder for RTC synchronization test
-  TEST_ASSERT_TRUE(true);
+void test_RTC_connected(void){
+  TEST_ASSERT_MESSAGE(rtc.begin(), "RTC not found.");
 }
 
-void test_RTC_alarm_function(void)
+String formattedDate() {
+    // __DATE__ --> "Dec  5 2025"
+    const char* raw = __DATE__;
+    char monthStr[4];
+    int day, year;
+
+    sscanf(raw, "%3s %d %d", monthStr, &day, &year);
+
+    int month;
+    if      (!strcmp(monthStr, "Jan")) month = 1;
+    else if (!strcmp(monthStr, "Feb")) month = 2;
+    else if (!strcmp(monthStr, "Mar")) month = 3;
+    else if (!strcmp(monthStr, "Apr")) month = 4;
+    else if (!strcmp(monthStr, "May")) month = 5;
+    else if (!strcmp(monthStr, "Jun")) month = 6;
+    else if (!strcmp(monthStr, "Jul")) month = 7;
+    else if (!strcmp(monthStr, "Aug")) month = 8;
+    else if (!strcmp(monthStr, "Sep")) month = 9;
+    else if (!strcmp(monthStr, "Oct")) month = 10;
+    else if (!strcmp(monthStr, "Nov")) month = 11;
+    else if (!strcmp(monthStr, "Dec")) month = 12;
+    else month = 13;
+
+    char buffer[20];
+    sprintf(buffer, "%04d/%02d/%02d", year, month, day);
+    return String(buffer);
+}
+
+void test_RTC_date_synchronization(void)
 {
+  // Placeholder for RTC synchronization test
+  rtc_init();
+
+  TEST_ASSERT_EQUAL_STRING(rtc_get_time(1).c_str(), formattedDate().c_str());
+}
+
+void test_RTC_alarm(void)
+{
+  rtc_init();
   // Placeholder for RTC alarm function test
-  TEST_ASSERT_TRUE(true);
+  // Making it so, that the alarm will trigger an interrupt
+  pinMode(CLOCK_INTERRUPT_PIN, INPUT_PULLUP);
+
+  rtc.setAlarm1(
+        rtc.now() + TimeSpan(3),
+        DS3231_A1_Second // this mode triggers the alarm when the seconds match. See Doxygen for other options
+  );
+
+  delay(3100);
+  int fired = rtc.alarmFired(1);
+  rtc.clearAlarm(1);
+  TEST_ASSERT_TRUE(fired);
 }
 
 void run_all_tests() {
@@ -98,6 +144,8 @@ void run_all_tests() {
     RUN_TEST(test_sd_card_available);
     RUN_TEST(test_SHT45_sensor);
     RUN_TEST(test_data_logging);
+    RUN_TEST(test_RTC_date_synchronization);
+    RUN_TEST(test_RTC_alarm);
     UNITY_END();
 }
 
@@ -108,5 +156,4 @@ void setup() {
 }
 
 void loop() {
-    // empty
 }
