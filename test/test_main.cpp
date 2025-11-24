@@ -20,8 +20,6 @@ void test_sd_card_available() {
 void test_data_logging() {
     // Clear the file first (optional)
     String testFile = "testFile.txt";
-    File clearFile = SD.open(testFile, FILE_WRITE);
-    if (clearFile) clearFile.close();
 
     // Prepare test data
     std::vector<String> testRow = {"Test1", "Test2", "Test3"};
