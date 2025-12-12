@@ -117,15 +117,20 @@ void test_RTC_date_synchronization(void)
   // Placeholder for RTC synchronization test
   rtc_init();
 
-  TEST_ASSERT_EQUAL_STRING(rtc_get_time(1).c_str(), formattedDate().c_str());
+  TEST_ASSERT_EQUAL_STRING(formattedDate().c_str(), rtc_get_time(1).c_str());
 }
+
+volatile bool irq = false;
+void alarm_isr() { irq = true; }
 
 void test_RTC_alarm(void)
 {
   rtc_init();
+
   // Placeholder for RTC alarm function test
   // Making it so, that the alarm will trigger an interrupt
   pinMode(CLOCK_INTERRUPT_PIN, INPUT_PULLUP);
+  attachInterrupt(digitalPinToInterrupt(CLOCK_INTERRUPT_PIN), alarm_isr, FALLING);
 
   rtc.setAlarm1(
         rtc.now() + TimeSpan(3),
@@ -135,7 +140,8 @@ void test_RTC_alarm(void)
   delay(3100);
   int fired = rtc.alarmFired(1);
   rtc.clearAlarm(1);
-  TEST_ASSERT_TRUE(fired);
+  detachInterrupt(digitalPinToInterrupt(CLOCK_INTERRUPT_PIN));
+  TEST_ASSERT_TRUE_MESSAGE(fired & irq, "Is the SQW pin of the RTC connected to the interrupt pin?");
 }
 
 void run_all_tests() {
