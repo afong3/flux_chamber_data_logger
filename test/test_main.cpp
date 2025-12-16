@@ -1,6 +1,7 @@
 #include <Arduino.h>
 #include <unity.h>
 #include "utils.h"
+#include <Co2Meter_K33.h>
 
 // Unity Assertions Cheat Sheet: https://github.com/ThrowTheSwitch/Unity/blob/master/docs/UnityAssertionsCheatSheetSuitableforPrintingandPossiblyFraming.pdf
 
@@ -59,7 +60,26 @@ void test_SHT45_sensor()
 void test_K33_ELG_sensor(void)
 {
   // Placeholder for K33 ELG sensor test
-  TEST_ASSERT_TRUE(true);
+  Co2Meter_K33 k33;
+
+  k33.initPoll();
+	delay(16000); //wait for sensor to warm up
+	double tempValue = k33.readTemp();
+	delay(20); 
+
+	double rhValue = k33.readRh();
+	delay(20);
+
+	double co2Value = k33.readCo2();
+
+	if (co2Value < 0) {
+		Serial.println("Checksum failed / Communication failure");
+		delay(9000);
+	}
+
+  TEST_ASSERT_TRUE(co2Value >= 300.0);
+  TEST_ASSERT_TRUE(tempValue >= -40.0 && tempValue <= 85.0);
+  TEST_ASSERT_TRUE(rhValue >= 0.0 && rhValue <= 100.0);
 }
 
 void test_NGM2611_E13_sensor(void)
@@ -115,7 +135,9 @@ String formattedDate() {
 void test_RTC_date_synchronization(void)
 {
   // Placeholder for RTC synchronization test
-  rtc_init();
+  bool setTime = true;
+
+  rtc_init(setTime);
 
   TEST_ASSERT_EQUAL_STRING(formattedDate().c_str(), rtc_get_time(1).c_str());
 }
@@ -125,7 +147,8 @@ void alarm_isr() { irq = true; }
 
 void test_RTC_alarm(void)
 {
-  rtc_init();
+  bool setTime = true;
+  rtc_init(setTime);
 
   // Placeholder for RTC alarm function test
   // Making it so, that the alarm will trigger an interrupt
@@ -152,6 +175,7 @@ void run_all_tests() {
     RUN_TEST(test_data_logging);
     RUN_TEST(test_RTC_date_synchronization);
     RUN_TEST(test_RTC_alarm);
+    RUN_TEST(test_K33_ELG_sensor);
     UNITY_END();
 }
 
